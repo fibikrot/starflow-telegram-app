@@ -3,296 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarFlow - Web3 Экосистема с Внутренней Валютой</title>
-    
-    <!-- Meta tags for SEO -->
-    <meta name="description" content="StarFlow - инновационная Web3 платформа с внутренней валютой 'звезды'. Играйте в мини-игры, участвуйте в реферальной программе и обменивайте звезды на криптовалюту.">
-    <meta name="keywords" content="Web3, криптовалюта, мини-игры, реферальная программа, звезды, блокчейн">
-    <meta name="author" content="StarFlow Team">
-    
-    <!-- Open Graph meta tags -->
-    <meta property="og:title" content="StarFlow - Web3 Экосистема">
-    <meta property="og:description" content="Играйте, зарабатывайте и обменивайте звезды на криптовалюту">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://starflow.app">
-    <meta property="og:image" content="/assets/images/og-image.png">
-    
-    <!-- Twitter Card meta tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="StarFlow - Web3 Экосистема">
-    <meta name="twitter:description" content="Играйте, зарабатывайте и обменивайте звезды на криптовалюту">
-    <meta name="twitter:image" content="/assets/images/twitter-card.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
-    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
-    
-    <!-- CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="/assets/css/style.css" rel="stylesheet">
-    
-    <!-- Theme color -->
-    <meta name="theme-color" content="#6366f1">
+    <title>StarFlow - Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 3em;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+
+        .game-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .stars-counter {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .click-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border: none;
+            font-size: 4em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .click-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5);
+        }
+
+        .click-button:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .floating-star {
+            position: absolute;
+            font-size: 2em;
+            pointer-events: none;
+            animation: float-up 1s ease-out forwards;
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        .achievements {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .achievement {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .achievement:last-child {
+            border-bottom: none;
+        }
+
+        .achievement-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .achievement-text {
+            flex: 1;
+        }
+
+        .achievement-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+    </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">
-                <i class="fas fa-star"></i>
-                <span>StarFlow</span>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⭐</div>
+            <div class="title">StarFlow</div>
+            <div class="subtitle">Зарабатывай звезды кликами!</div>
+        </div>
+
+        <div class="game-area">
+            <div class="stars-counter" id="starsCount">0 ⭐</div>
+            
+            <button class="click-button" id="clickButton" onclick="clickStar()">
+                ⭐
+            </button>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="clicksPerSecond">0</div>
+                    <div class="stat-label">Кликов/сек</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalClicks">0</div>
+                    <div class="stat-label">Всего кликов</div>
+                </div>
             </div>
-            <div class="loading-spinner"></div>
-            <p>Загрузка приложения...</p>
+        </div>
+
+        <div class="achievements">
+            <h3 style="margin-bottom: 15px;">🏆 Достижения</h3>
+            <div class="achievement" id="achievement1">
+                <div class="achievement-icon">🌟</div>
+                <div class="achievement-text">
+                    <div class="achievement-title">Первая звезда</div>
+                    <div class="achievement-desc">Сделай первый клик</div>
+                </div>
+            </div>
+            <div class="achievement" id="achievement2">
+                <div class="achievement-icon">💫</div>
+                <div class="achievement-text">
+                    <div class="achievement-title">Звездопад</div>
+                    <div class="achievement-desc">Собери 100 звезд</div>
+                </div>
+            </div>
+            <div class="achievement" id="achievement3">
+                <div class="achievement-icon">🚀</div>
+                <div class="achievement-text">
+                    <div class="achievement-title">Космический клик</div>
+                    <div class="achievement-desc">Сделай 1000 кликов</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="shareScore()">
+                📤 Поделиться результатом
+            </button>
+            <button class="btn" onclick="resetGame()">
+                🔄 Начать заново
+            </button>
         </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-star"></i>
-                <span>StarFlow</span>
-            </div>
+    <script>
+        // Telegram Web App initialization
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        // Game variables
+        let stars = parseInt(localStorage.getItem('stars') || '0');
+        let totalClicks = parseInt(localStorage.getItem('totalClicks') || '0');
+        let clickTimes = [];
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('starsCount').textContent = `${stars} ⭐`;
+            document.getElementById('totalClicks').textContent = totalClicks;
             
-            <div class="nav-menu" id="nav-menu">
-                <a href="#home" class="nav-link active" data-page="home">
-                    <i class="fas fa-home"></i>
-                    <span>Главная</span>
-                </a>
-                <a href="#games" class="nav-link" data-page="games">
-                    <i class="fas fa-gamepad"></i>
-                    <span>Игры</span>
-                </a>
-                <a href="#wallet" class="nav-link" data-page="wallet">
-                    <i class="fas fa-wallet"></i>
-                    <span>Кошелек</span>
-                </a>
-                <a href="#exchange" class="nav-link" data-page="exchange">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Обмен</span>
-                </a>
-                <a href="#referral" class="nav-link" data-page="referral">
-                    <i class="fas fa-users"></i>
-                    <span>Рефералы</span>
-                </a>
-                <a href="#profile" class="nav-link" data-page="profile">
-                    <i class="fas fa-user"></i>
-                    <span>Профиль</span>
-                </a>
-            </div>
+            // Calculate clicks per second
+            const now = Date.now();
+            clickTimes = clickTimes.filter(time => now - time < 1000);
+            document.getElementById('clicksPerSecond').textContent = clickTimes.length;
+            
+            // Save to localStorage
+            localStorage.setItem('stars', stars);
+            localStorage.setItem('totalClicks', totalClicks);
+            
+            // Check achievements
+            checkAchievements();
+        }
 
-            <div class="nav-actions">
-                <div class="balance-display" id="balance-display">
-                    <i class="fas fa-star"></i>
-                    <span id="stars-balance">0</span>
-                </div>
-                
-                <div class="user-menu" id="user-menu">
-                    <button class="user-avatar" id="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </button>
-                    <div class="user-dropdown" id="user-dropdown">
-                        <div class="user-info">
-                            <div class="user-name" id="user-name">Гость</div>
-                            <div class="user-level" id="user-level">Уровень 1</div>
-                        </div>
-                        <hr>
-                        <a href="#settings" class="dropdown-item">
-                            <i class="fas fa-cog"></i>
-                            Настройки
-                        </a>
-                        <a href="#help" class="dropdown-item">
-                            <i class="fas fa-question-circle"></i>
-                            Помощь
-                        </a>
-                        <a href="#logout" class="dropdown-item" id="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Выйти
-                        </a>
-                    </div>
-                </div>
-                
-                <button class="nav-toggle" id="nav-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+        // Click handler
+        function clickStar() {
+            stars++;
+            totalClicks++;
+            clickTimes.push(Date.now());
+            
+            // Create floating star animation
+            createFloatingStar();
+            
+            // Button animation
+            const button = document.getElementById('clickButton');
+            button.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+            
+            updateDisplay();
+            
+            // Send to Telegram if available
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify({
+                    action: 'click',
+                    stars: stars,
+                    totalClicks: totalClicks
+                }));
+            }
+        }
 
-    <!-- Main Content -->
-    <main class="main-content" id="main-content">
-        <!-- Auth Modal -->
-        <div class="modal" id="auth-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="auth-title">Вход в StarFlow</h2>
-                    <button class="modal-close" id="auth-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="auth-tabs">
-                        <button class="auth-tab active" data-tab="login">Вход</button>
-                        <button class="auth-tab" data-tab="register">Регистрация</button>
-                    </div>
-                    
-                    <!-- Login Form -->
-                    <form class="auth-form active" id="login-form">
-                        <div class="form-group">
-                            <label for="login-email">Email или Username</label>
-                            <input type="text" id="login-email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password">Пароль</label>
-                            <input type="password" id="login-password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-full">
-                            <i class="fas fa-sign-in-alt"></i>
-                            Войти
-                        </button>
-                    </form>
-                    
-                    <!-- Register Form -->
-                    <form class="auth-form" id="register-form">
-                        <div class="form-group">
-                            <label for="register-username">Username</label>
-                            <input type="text" id="register-username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="register-email">Email</label>
-                            <input type="email" id="register-email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="register-password">Пароль</label>
-                            <input type="password" id="register-password" name="password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="register-referral">Реферальный код (необязательно)</label>
-                            <input type="text" id="register-referral" name="referralCode" placeholder="Введите код друга">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-full">
-                            <i class="fas fa-user-plus"></i>
-                            Зарегистрироваться
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        // Create floating star animation
+        function createFloatingStar() {
+            const star = document.createElement('div');
+            star.className = 'floating-star';
+            star.textContent = '+1⭐';
+            star.style.left = Math.random() * 300 + 'px';
+            star.style.top = '50%';
+            document.body.appendChild(star);
+            
+            setTimeout(() => {
+                document.body.removeChild(star);
+            }, 1000);
+        }
 
-        <!-- Page Content Container -->
-        <div class="page-container" id="page-container">
-            <!-- Home Page -->
-            <div class="page active" id="home-page">
-                <div class="hero-section">
-                    <div class="hero-content">
-                        <h1>Добро пожаловать в StarFlow</h1>
-                        <p>Инновационная Web3 экосистема с внутренней валютой "звезды"</p>
-                        <div class="hero-stats">
-                            <div class="stat-item">
-                                <div class="stat-value" id="total-users">0</div>
-                                <div class="stat-label">Пользователей</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="total-stars">0</div>
-                                <div class="stat-label">Звезд в обороте</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="total-games">0</div>
-                                <div class="stat-label">Игр сыграно</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        // Check achievements
+        function checkAchievements() {
+            const achievements = [
+                { id: 'achievement1', condition: totalClicks >= 1 },
+                { id: 'achievement2', condition: stars >= 100 },
+                { id: 'achievement3', condition: totalClicks >= 1000 }
+            ];
+            
+            achievements.forEach(achievement => {
+                const element = document.getElementById(achievement.id);
+                if (achievement.condition) {
+                    element.style.opacity = '1';
+                    element.style.background = 'rgba(76, 175, 80, 0.2)';
+                } else {
+                    element.style.opacity = '0.5';
+                }
+            });
+        }
 
-                <div class="features-section">
-                    <h2>Возможности платформы</h2>
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-gamepad"></i>
-                            </div>
-                            <h3>Мини-игры</h3>
-                            <p>Играйте в увлекательные игры и зарабатывайте звезды за достижения</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <h3>Реферальная программа</h3>
-                            <p>Приглашайте друзей и получайте бонусы с их активности</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fas fa-exchange-alt"></i>
-                            </div>
-                            <h3>Обмен на криптовалюту</h3>
-                            <p>Конвертируйте заработанные звезды в популярные криптовалюты</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="fab fa-telegram"></i>
-                            </div>
-                            <h3>Telegram интеграция</h3>
-                            <p>Получайте уведомления и управляйте аккаунтом через Telegram бот</p>
-                        </div>
-                    </div>
-                </div>
+        // Share score
+        function shareScore() {
+            const message = `🌟 Я собрал ${stars} звезд в StarFlow! 🚀\n\nВсего кликов: ${totalClicks}\n\nПопробуй и ты: https://t.me/star_web3_bot`;
+            
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/star_web3_bot&text=${encodeURIComponent(message)}`);
+            } else {
+                navigator.clipboard.writeText(message).then(() => {
+                    alert('Результат скопирован в буфер обмена!');
+                });
+            }
+        }
 
-                <div class="daily-bonus-section" id="daily-bonus-section">
-                    <div class="bonus-card">
-                        <div class="bonus-header">
-                            <h3>Ежедневный бонус</h3>
-                            <div class="bonus-streak">
-                                <i class="fas fa-fire"></i>
-                                <span id="daily-streak">0</span> дней подряд
-                            </div>
-                        </div>
-                        <div class="bonus-content">
-                            <div class="bonus-amount">
-                                <i class="fas fa-star"></i>
-                                <span id="daily-bonus-amount">50</span> звезд
-                            </div>
-                            <button class="btn btn-primary" id="claim-daily-bonus">
-                                <i class="fas fa-gift"></i>
-                                Забрать бонус
-                            </button>
-                        </div>
-                        <div class="bonus-timer" id="bonus-timer" style="display: none;">
-                            <p>Следующий бонус через: <span id="bonus-countdown">--:--:--</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        // Reset game
+        function resetGame() {
+            if (confirm('Вы уверены, что хотите начать заново?')) {
+                stars = 0;
+                totalClicks = 0;
+                clickTimes = [];
+                localStorage.clear();
+                updateDisplay();
+            }
+        }
 
-            <!-- Other pages will be loaded dynamically -->
-            <div class="page" id="games-page"></div>
-            <div class="page" id="wallet-page"></div>
-            <div class="page" id="exchange-page"></div>
-            <div class="page" id="referral-page"></div>
-            <div class="page" id="profile-page"></div>
-        </div>
-    </main>
+        // Initialize
+        updateDisplay();
 
-    <!-- Notification System -->
-    <div class="notifications" id="notifications"></div>
-
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="/assets/js/config.js"></script>
-    <script src="/assets/js/utils.js"></script>
-    <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/auth.js"></script>
-    <script src="/assets/js/navigation.js"></script>
-    <script src="/assets/js/notifications.js"></script>
-    <script src="/assets/js/socket.js"></script>
-    <script src="/assets/js/pages/home.js"></script>
-    <script src="/assets/js/pages/games.js"></script>
-    <script src="/assets/js/pages/wallet.js"></script>
-    <script src="/assets/js/pages/exchange.js"></script>
-    <script src="/assets/js/pages/referral.js"></script>
-    <script src="/assets/js/pages/profile.js"></script>
-    <script src="/assets/js/app.js"></script>
+        // Auto-save every 5 seconds
+        setInterval(() => {
+            localStorage.setItem('stars', stars);
+            localStorage.setItem('totalClicks', totalClicks);
+        }, 5000);
+    </script>
 </body>
 </html> 

@@ -118,52 +118,9 @@ class StarFlowApp {
             });
         });
 
-        // Root route - serve HTML
+        // Root route - serve HTML file
         this.app.get('/', (req, res) => {
-            res.send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>StarFlow - Telegram Mini App</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; }
-                        .container { max-width: 600px; margin: 0 auto; text-align: center; }
-                        .star { font-size: 4em; margin: 20px 0; }
-                        .btn { background: #0088cc; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 10px; text-decoration: none; display: inline-block; }
-                        .btn:hover { background: #006699; }
-                        .info { background: #333; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="star">⭐</div>
-                        <h1>StarFlow</h1>
-                        <p>Telegram Mini App для заработка звезд</p>
-                        
-                        <div class="info">
-                            <h3>🚀 Приложение запущено!</h3>
-                            <p>Статус: <strong>Активно</strong></p>
-                            <p>Время работы: <strong>${Math.floor(process.uptime())} секунд</strong></p>
-                            <p>Версия: <strong>1.0.0</strong></p>
-                        </div>
-                        
-                        <a href="https://t.me/${process.env.TELEGRAM_BOT_USERNAME || 'star_web3_bot'}" class="btn">
-                            📱 Открыть в Telegram
-                        </a>
-                        
-                        <a href="/api/test" class="btn">
-                            🔧 Тест API
-                        </a>
-                        
-                        <a href="/health" class="btn">
-                            💚 Health Check
-                        </a>
-                    </div>
-                </body>
-                </html>
-            `);
+            res.sendFile(path.join(__dirname, '../public/index.html'));
         });
 
         // 404 handler
