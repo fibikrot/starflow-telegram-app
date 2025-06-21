@@ -200,9 +200,32 @@
             font-size: 0.9em;
             opacity: 0.7;
         }
+
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5em;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+    
     <div class="container">
         <div class="header">
             <div class="logo">⭐</div>
@@ -276,6 +299,115 @@
         let stars = parseInt(localStorage.getItem('stars') || '0');
         let totalClicks = parseInt(localStorage.getItem('totalClicks') || '0');
         let clickTimes = [];
+        let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+
+        // Audio Context for sound effects
+        let audioContext;
+        let sounds = {};
+
+        // Initialize audio
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                createSounds();
+                updateSoundToggle();
+            } catch (error) {
+                console.log('Audio not supported:', error);
+                soundEnabled = false;
+                updateSoundToggle();
+            }
+        }
+
+        // Create sound effects using Web Audio API
+        function createSounds() {
+            // Click sound - short beep
+            sounds.click = () => {
+                if (!soundEnabled || !audioContext) return;
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            };
+
+            // Achievement sound - celebration
+            sounds.achievement = () => {
+                if (!soundEnabled || !audioContext) return;
+                
+                const frequencies = [523, 659, 784, 1047]; // C, E, G, C
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.3);
+                    }, index * 100);
+                });
+            };
+
+            // Milestone sound - power up
+            sounds.milestone = () => {
+                if (!soundEnabled || !audioContext) return;
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.5);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            };
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('soundEnabled', soundEnabled);
+            updateSoundToggle();
+            
+            if (soundEnabled && !audioContext) {
+                initAudio();
+            }
+            
+            // Play test sound
+            if (soundEnabled && sounds.click) {
+                sounds.click();
+            }
+        }
+
+        // Update sound toggle button
+        function updateSoundToggle() {
+            const toggle = document.getElementById('soundToggle');
+            if (toggle) {
+                toggle.textContent = soundEnabled ? '🔊' : '🔇';
+                toggle.title = soundEnabled ? 'Выключить звук' : 'Включить звук';
+            }
+        }
 
         // Update display
         function updateDisplay() {
@@ -297,9 +429,24 @@
 
         // Click handler
         function clickStar() {
+            const prevStars = stars;
+            const prevTotalClicks = totalClicks;
+            
             stars++;
             totalClicks++;
             clickTimes.push(Date.now());
+            
+            // Play click sound
+            if (sounds.click) {
+                sounds.click();
+            }
+            
+            // Check for milestones (every 50 stars)
+            if (stars % 50 === 0 && stars > prevStars) {
+                if (sounds.milestone) {
+                    setTimeout(() => sounds.milestone(), 100);
+                }
+            }
             
             // Create floating star animation
             createFloatingStar();
@@ -340,16 +487,23 @@
         // Check achievements
         function checkAchievements() {
             const achievements = [
-                { id: 'achievement1', condition: totalClicks >= 1 },
-                { id: 'achievement2', condition: stars >= 100 },
-                { id: 'achievement3', condition: totalClicks >= 1000 }
+                { id: 'achievement1', condition: totalClicks >= 1, triggered: false },
+                { id: 'achievement2', condition: stars >= 100, triggered: false },
+                { id: 'achievement3', condition: totalClicks >= 1000, triggered: false }
             ];
             
             achievements.forEach(achievement => {
                 const element = document.getElementById(achievement.id);
+                const wasUnlocked = element.style.opacity === '1';
+                
                 if (achievement.condition) {
                     element.style.opacity = '1';
                     element.style.background = 'rgba(76, 175, 80, 0.2)';
+                    
+                    // Play achievement sound if newly unlocked
+                    if (!wasUnlocked && sounds.achievement) {
+                        setTimeout(() => sounds.achievement(), 200);
+                    }
                 } else {
                     element.style.opacity = '0.5';
                 }
@@ -376,9 +530,23 @@
                 totalClicks = 0;
                 clickTimes = [];
                 localStorage.clear();
+                localStorage.setItem('soundEnabled', soundEnabled);
                 updateDisplay();
             }
         }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            updateSoundToggle();
+            
+            // Initialize audio on first user interaction
+            document.addEventListener('click', () => {
+                if (!audioContext) {
+                    initAudio();
+                }
+            }, { once: true });
+        });
 
         // Initialize
         updateDisplay();
