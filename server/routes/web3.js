@@ -4,8 +4,14 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Web3Service = require('../services/web3Service');
 const axios = require('axios');
+const StarFlowToken = require('../web3/tokenContract');
+const StarFlowNFT = require('../web3/nftContract');
 
 const router = express.Router();
+
+// Инициализируем контракты
+const tokenContract = new StarFlowToken();
+const nftContract = new StarFlowNFT();
 
 // @route   POST /api/web3/connect-wallet
 // @desc    Connect user's Web3 wallet
@@ -485,5 +491,267 @@ router.post('/estimate-gas', asyncHandler(async (req, res) => {
     timestamp: new Date().toISOString()
   });
 }));
+
+// Получить информацию о токене STAR
+router.get('/token/info', async (req, res) => {
+    try {
+        const tokenInfo = await tokenContract.getTokenInfo();
+        const price = await tokenContract.getStarPrice();
+        
+        res.json({
+            success: true,
+            token: tokenInfo,
+            price: price
+        });
+    } catch (error) {
+        console.error('Ошибка получения информации о токене:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить баланс токенов пользователя
+router.get('/token/balance/:address', async (req, res) => {
+    try {
+        const { address } = req.params;
+        const balance = await tokenContract.getBalance(address);
+        
+        res.json({
+            success: true,
+            address: address,
+            balance: balance,
+            symbol: 'STAR'
+        });
+    } catch (error) {
+        console.error('Ошибка получения баланса:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Создать новый кошелек
+router.post('/wallet/create', async (req, res) => {
+    try {
+        const wallet = tokenContract.createWallet();
+        
+        if (!wallet) {
+            throw new Error('Не удалось создать кошелек');
+        }
+        
+        res.json({
+            success: true,
+            address: wallet.address,
+            // Приватный ключ НЕ отправляем в продакшене!
+            privateKey: process.env.NODE_ENV === 'development' ? wallet.privateKey : 'hidden',
+            message: 'Кошелек успешно создан'
+        });
+    } catch (error) {
+        console.error('Ошибка создания кошелька:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить информацию о NFT коллекции
+router.get('/nft/collection', async (req, res) => {
+    try {
+        const collectionInfo = await nftContract.getCollectionInfo();
+        const stats = await nftContract.getNFTStats();
+        
+        res.json({
+            success: true,
+            collection: collectionInfo,
+            stats: stats
+        });
+    } catch (error) {
+        console.error('Ошибка получения информации о коллекции:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить NFT пользователя
+router.get('/nft/user/:address', async (req, res) => {
+    try {
+        const { address } = req.params;
+        const nfts = await nftContract.getUserNFTs(address);
+        const balance = await nftContract.getNFTBalance(address);
+        
+        res.json({
+            success: true,
+            address: address,
+            balance: balance,
+            nfts: nfts
+        });
+    } catch (error) {
+        console.error('Ошибка получения NFT:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Минт NFT за достижение
+router.post('/nft/mint', async (req, res) => {
+    try {
+        const { userAddress, totalClicks } = req.body;
+        
+        if (!userAddress || !totalClicks) {
+            return res.status(400).json({
+                success: false,
+                error: 'Требуются userAddress и totalClicks'
+            });
+        }
+        
+        const result = await nftContract.mintAchievementNFT(userAddress, totalClicks);
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Ошибка минта NFT:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Проверить возможность получения NFT
+router.post('/nft/check', async (req, res) => {
+    try {
+        const { totalClicks, userAddress } = req.body;
+        
+        if (!totalClicks) {
+            return res.status(400).json({
+                success: false,
+                error: 'Требуется totalClicks'
+            });
+        }
+        
+        const userNFTs = userAddress ? await nftContract.getUserNFTs(userAddress) : [];
+        const canMint = nftContract.canMintNFT(totalClicks, userNFTs);
+        
+        res.json({
+            success: true,
+            ...canMint
+        });
+    } catch (error) {
+        console.error('Ошибка проверки NFT:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить типы звезд и требования
+router.get('/nft/star-types', async (req, res) => {
+    try {
+        res.json({
+            success: true,
+            starTypes: nftContract.starTypes
+        });
+    } catch (error) {
+        console.error('Ошибка получения типов звезд:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить цену NFT по редкости
+router.get('/nft/price/:rarity', async (req, res) => {
+    try {
+        const { rarity } = req.params;
+        const price = await nftContract.getNFTPrice(rarity);
+        
+        res.json({
+            success: true,
+            rarity: rarity,
+            price: price,
+            currency: 'MATIC'
+        });
+    } catch (error) {
+        console.error('Ошибка получения цены NFT:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Награда токенами за игровые достижения
+router.post('/token/reward', async (req, res) => {
+    try {
+        const { userAddress, stars, totalClicks } = req.body;
+        
+        if (!userAddress || !stars) {
+            return res.status(400).json({
+                success: false,
+                error: 'Требуются userAddress и stars'
+            });
+        }
+        
+        // Конвертируем звезды в токены (1 звезда = 0.1 STAR токена)
+        const tokensToMint = stars * 0.1;
+        
+        // В реальности здесь будет минт через смарт-контракт
+        // Пока возвращаем мок результат
+        const result = {
+            success: true,
+            userAddress: userAddress,
+            starsEarned: stars,
+            tokensEarned: tokensToMint,
+            totalClicks: totalClicks,
+            message: `Вы заработали ${tokensToMint} STAR токенов!`
+        };
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Ошибка награждения токенами:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Получить общую статистику Web3
+router.get('/stats', async (req, res) => {
+    try {
+        const tokenInfo = await tokenContract.getTokenInfo();
+        const tokenPrice = await tokenContract.getStarPrice();
+        const collectionInfo = await nftContract.getCollectionInfo();
+        const nftStats = await nftContract.getNFTStats();
+        
+        res.json({
+            success: true,
+            token: {
+                ...tokenInfo,
+                price: tokenPrice
+            },
+            nft: {
+                ...collectionInfo,
+                stats: nftStats
+            },
+            network: 'Polygon Mumbai Testnet'
+        });
+    } catch (error) {
+        console.error('Ошибка получения статистики Web3:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 module.exports = router; 

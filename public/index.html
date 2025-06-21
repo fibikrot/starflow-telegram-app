@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarFlow - Telegram Mini App</title>
+    <title>StarFlow - Clicker Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,22 +14,51 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        .stars-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
         }
 
         .container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
             text-align: center;
-        }
-
-        .header {
-            margin-bottom: 30px;
+            max-width: 400px;
+            width: 90%;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 20px;
         }
 
         .logo {
@@ -38,524 +68,482 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
+            0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
         }
 
         .title {
             font-size: 2em;
-            font-weight: bold;
             margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         .subtitle {
-            opacity: 0.8;
-            font-size: 1.1em;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            opacity: 0.9;
         }
 
         .game-area {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
             margin: 20px 0;
-            backdrop-filter: blur(10px);
         }
 
         .stars-counter {
-            font-size: 2.5em;
-            font-weight: bold;
+            font-size: 1.5em;
             margin-bottom: 20px;
-            color: #ffd700;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .click-button {
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            background: linear-gradient(45deg, #ffd700, #ffed4e);
             border: none;
-            font-size: 4em;
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            font-size: 3em;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
         }
 
         .click-button:hover {
             transform: scale(1.1);
-            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
         }
 
         .click-button:active {
             transform: scale(0.95);
         }
 
+        .click-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .click-button:hover::before {
+            animation: shine 0.6s ease-in-out;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
         .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 15px;
-            backdrop-filter: blur(5px);
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             margin-top: 20px;
         }
 
-        .btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 25px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
+        .stat-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+        .achievements {
+            margin-top: 20px;
         }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+        .achievement {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
         }
 
-        .floating-star {
+        .achievement.completed {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .achievement-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .achievement-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .achievement-progress {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .floating-text {
             position: absolute;
-            font-size: 2em;
+            font-size: 1.5em;
+            font-weight: bold;
             pointer-events: none;
-            animation: float-up 1s ease-out forwards;
+            z-index: 1000;
+            animation: floatUp 1s ease-out forwards;
         }
 
-        @keyframes float-up {
+        @keyframes floatUp {
             0% {
                 opacity: 1;
                 transform: translateY(0);
             }
             100% {
                 opacity: 0;
-                transform: translateY(-100px);
+                transform: translateY(-50px);
             }
         }
 
-        .achievements {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: left;
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFloat 1s ease-out forwards;
         }
 
-        .achievement {
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+
+        /* Web3 Styles */
+        .web3-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .wallet-controls {
+            margin-bottom: 20px;
+        }
+
+        .connect-wallet-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .connect-wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+        }
+
+        .wallet-connected {
             display: flex;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(76, 175, 80, 0.4);
         }
 
-        .achievement:last-child {
-            border-bottom: none;
+        .disconnect-btn {
+            background: rgba(244, 67, 54, 0.8);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
         }
 
-        .achievement-icon {
-            font-size: 2em;
-            margin-right: 15px;
+        .web3-stats {
+            margin: 15px 0;
         }
 
-        .achievement-text {
-            flex: 1;
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
         }
 
-        .achievement-title {
+        .token-balance {
+            font-size: 1.2em;
             font-weight: bold;
+            color: #ffd700;
+        }
+
+        .nft-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .nft-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .nft-image {
+            font-size: 2em;
             margin-bottom: 5px;
         }
 
-        .achievement-desc {
-            font-size: 0.9em;
-            opacity: 0.7;
+        .nft-name {
+            font-size: 0.8em;
+            font-weight: bold;
         }
 
-        .sound-toggle {
+        .nft-rarity {
+            font-size: 0.7em;
+            opacity: 0.8;
+        }
+
+        .web3-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .web3-btn {
+            background: linear-gradient(45deg, #9c27b0, #673ab7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .web3-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+        }
+
+        .web3-status {
+            display: none;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(33, 150, 243, 0.4);
+            font-size: 0.9em;
+        }
+
+        .nft-notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 1.5em;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
+            background: rgba(76, 175, 80, 0.95);
             color: white;
-            transition: all 0.3s;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideIn 0.5s ease-out;
         }
 
-        .sound-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-content h4 {
+            margin-bottom: 10px;
+        }
+
+        .mint-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .close-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            float: right;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .click-button {
+                width: 120px;
+                height: 120px;
+                font-size: 2.5em;
+            }
+            
+            .title {
+                font-size: 1.5em;
+            }
+            
+            .web3-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+    <div class="stars-bg" id="starsBg"></div>
     
     <div class="container">
-        <div class="header">
-            <div class="logo">⭐</div>
-            <div class="title">StarFlow</div>
-            <div class="subtitle">Зарабатывай звезды кликами!</div>
-        </div>
-
+        <div class="logo" id="logo">⭐</div>
+        <h1 class="title">StarFlow</h1>
+        <p class="subtitle">Кликай и зарабатывай звезды!</p>
+        
         <div class="game-area">
-            <div class="stars-counter" id="starsCount">0 ⭐</div>
+            <div class="stars-counter" id="starsCounter">
+                Звезды: <span id="starsCount">0</span>
+            </div>
             
             <button class="click-button" id="clickButton" onclick="clickStar()">
                 ⭐
             </button>
-            
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-value" id="clicksPerSecond">0</div>
-                    <div class="stat-label">Кликов/сек</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalClicks">0</div>
-                    <div class="stat-label">Всего кликов</div>
-                </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div>Всего кликов</div>
+                <div id="totalClicks">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Кликов в секунду</div>
+                <div id="clicksPerSecond">0</div>
             </div>
         </div>
-
+        
         <div class="achievements">
-            <h3 style="margin-bottom: 15px;">🏆 Достижения</h3>
-            <div class="achievement" id="achievement1">
-                <div class="achievement-icon">🌟</div>
-                <div class="achievement-text">
-                    <div class="achievement-title">Первая звезда</div>
-                    <div class="achievement-desc">Сделай первый клик</div>
-                </div>
-            </div>
-            <div class="achievement" id="achievement2">
-                <div class="achievement-icon">💫</div>
-                <div class="achievement-text">
-                    <div class="achievement-title">Звездопад</div>
-                    <div class="achievement-desc">Собери 100 звезд</div>
-                </div>
-            </div>
-            <div class="achievement" id="achievement3">
-                <div class="achievement-icon">🚀</div>
-                <div class="achievement-text">
-                    <div class="achievement-title">Космический клик</div>
-                    <div class="achievement-desc">Сделай 1000 кликов</div>
-                </div>
+            <h3>Достижения</h3>
+            <div id="achievementsList"></div>
+        </div>
+    </div>
+
+    <!-- Web3 Section -->
+    <div class="container web3-section" id="web3Section">
+        <h2>🚀 Web3 Интеграция</h2>
+        
+        <div class="wallet-controls">
+            <button class="connect-wallet-btn" id="connectWalletBtn" onclick="web3Manager.connectWallet()">
+                🔗 Подключить кошелек
+            </button>
+            <div id="walletInfo" style="display: none;"></div>
+        </div>
+        
+        <div id="web3Status" class="web3-status"></div>
+        
+        <div class="web3-stats" id="web3Stats">
+            <!-- Web3 статистика загружается динамически -->
+        </div>
+        
+        <div class="stat-item">
+            <span>Баланс STAR:</span>
+            <span id="tokenBalance" class="token-balance">0.00 STAR</span>
+        </div>
+        
+        <div id="nftCollection">
+            <h4>Коллекция NFT (0)</h4>
+            <div class="nft-grid">
+                <!-- NFT загружаются динамически -->
             </div>
         </div>
-
-        <div class="actions">
-            <button class="btn btn-primary" onclick="shareScore()">
-                📤 Поделиться результатом
+        
+        <div class="web3-actions">
+            <button class="web3-btn" onclick="web3Manager.claimTokenReward()">
+                💰 Обменять звезды
             </button>
-            <button class="btn" onclick="resetGame()">
-                🔄 Начать заново
+            <button class="web3-btn" onclick="web3Manager.checkAvailableNFTs()">
+                🎨 Проверить NFT
             </button>
         </div>
     </div>
 
+    <script src="js/game.js"></script>
+    <script src="js/web3.js"></script>
+    
     <script>
-        // Telegram Web App initialization
-        let tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-        }
-
-        // Game variables
-        let stars = parseInt(localStorage.getItem('stars') || '0');
-        let totalClicks = parseInt(localStorage.getItem('totalClicks') || '0');
-        let clickTimes = [];
-        let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
-
-        // Audio Context for sound effects
-        let audioContext;
-        let sounds = {};
-
-        // Initialize audio
-        function initAudio() {
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                createSounds();
-                updateSoundToggle();
-            } catch (error) {
-                console.log('Audio not supported:', error);
-                soundEnabled = false;
-                updateSoundToggle();
+        // Создание фоновых звезд
+        function createBackgroundStars() {
+            const starsBg = document.getElementById('starsBg');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsBg.appendChild(star);
             }
         }
 
-        // Create sound effects using Web Audio API
-        function createSounds() {
-            // Click sound - short beep
-            sounds.click = () => {
-                if (!soundEnabled || !audioContext) return;
-                
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-            };
-
-            // Achievement sound - celebration
-            sounds.achievement = () => {
-                if (!soundEnabled || !audioContext) return;
-                
-                const frequencies = [523, 659, 784, 1047]; // C, E, G, C
-                frequencies.forEach((freq, index) => {
-                    setTimeout(() => {
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-                        
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                        
-                        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                        
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.3);
-                    }, index * 100);
-                });
-            };
-
-            // Milestone sound - power up
-            sounds.milestone = () => {
-                if (!soundEnabled || !audioContext) return;
-                
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.5);
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
-            };
-        }
-
-        // Toggle sound
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            localStorage.setItem('soundEnabled', soundEnabled);
-            updateSoundToggle();
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            createBackgroundStars();
+            loadGame();
             
-            if (soundEnabled && !audioContext) {
-                initAudio();
+            // Показываем Web3 секцию, если есть поддержка
+            if (typeof window.ethereum !== 'undefined') {
+                document.getElementById('web3Section').style.display = 'block';
             }
-            
-            // Play test sound
-            if (soundEnabled && sounds.click) {
-                sounds.click();
-            }
-        }
-
-        // Update sound toggle button
-        function updateSoundToggle() {
-            const toggle = document.getElementById('soundToggle');
-            if (toggle) {
-                toggle.textContent = soundEnabled ? '🔊' : '🔇';
-                toggle.title = soundEnabled ? 'Выключить звук' : 'Включить звук';
-            }
-        }
-
-        // Update display
-        function updateDisplay() {
-            document.getElementById('starsCount').textContent = `${stars} ⭐`;
-            document.getElementById('totalClicks').textContent = totalClicks;
-            
-            // Calculate clicks per second
-            const now = Date.now();
-            clickTimes = clickTimes.filter(time => now - time < 1000);
-            document.getElementById('clicksPerSecond').textContent = clickTimes.length;
-            
-            // Save to localStorage
-            localStorage.setItem('stars', stars);
-            localStorage.setItem('totalClicks', totalClicks);
-            
-            // Check achievements
-            checkAchievements();
-        }
-
-        // Click handler
-        function clickStar() {
-            const prevStars = stars;
-            const prevTotalClicks = totalClicks;
-            
-            stars++;
-            totalClicks++;
-            clickTimes.push(Date.now());
-            
-            // Play click sound
-            if (sounds.click) {
-                sounds.click();
-            }
-            
-            // Check for milestones (every 50 stars)
-            if (stars % 50 === 0 && stars > prevStars) {
-                if (sounds.milestone) {
-                    setTimeout(() => sounds.milestone(), 100);
-                }
-            }
-            
-            // Create floating star animation
-            createFloatingStar();
-            
-            // Button animation
-            const button = document.getElementById('clickButton');
-            button.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 100);
-            
-            updateDisplay();
-            
-            // Send to Telegram if available
-            if (tg && tg.sendData) {
-                tg.sendData(JSON.stringify({
-                    action: 'click',
-                    stars: stars,
-                    totalClicks: totalClicks
-                }));
-            }
-        }
-
-        // Create floating star animation
-        function createFloatingStar() {
-            const star = document.createElement('div');
-            star.className = 'floating-star';
-            star.textContent = '+1⭐';
-            star.style.left = Math.random() * 300 + 'px';
-            star.style.top = '50%';
-            document.body.appendChild(star);
-            
-            setTimeout(() => {
-                document.body.removeChild(star);
-            }, 1000);
-        }
-
-        // Check achievements
-        function checkAchievements() {
-            const achievements = [
-                { id: 'achievement1', condition: totalClicks >= 1, triggered: false },
-                { id: 'achievement2', condition: stars >= 100, triggered: false },
-                { id: 'achievement3', condition: totalClicks >= 1000, triggered: false }
-            ];
-            
-            achievements.forEach(achievement => {
-                const element = document.getElementById(achievement.id);
-                const wasUnlocked = element.style.opacity === '1';
-                
-                if (achievement.condition) {
-                    element.style.opacity = '1';
-                    element.style.background = 'rgba(76, 175, 80, 0.2)';
-                    
-                    // Play achievement sound if newly unlocked
-                    if (!wasUnlocked && sounds.achievement) {
-                        setTimeout(() => sounds.achievement(), 200);
-                    }
-                } else {
-                    element.style.opacity = '0.5';
-                }
-            });
-        }
-
-        // Share score
-        function shareScore() {
-            const message = `🌟 Я собрал ${stars} звезд в StarFlow! 🚀\n\nВсего кликов: ${totalClicks}\n\nПопробуй и ты: https://t.me/star_web3_bot`;
-            
-            if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink(`https://t.me/share/url?url=https://t.me/star_web3_bot&text=${encodeURIComponent(message)}`);
-            } else {
-                navigator.clipboard.writeText(message).then(() => {
-                    alert('Результат скопирован в буфер обмена!');
-                });
-            }
-        }
-
-        // Reset game
-        function resetGame() {
-            if (confirm('Вы уверены, что хотите начать заново?')) {
-                stars = 0;
-                totalClicks = 0;
-                clickTimes = [];
-                localStorage.clear();
-                localStorage.setItem('soundEnabled', soundEnabled);
-                updateDisplay();
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateDisplay();
-            updateSoundToggle();
-            
-            // Initialize audio on first user interaction
-            document.addEventListener('click', () => {
-                if (!audioContext) {
-                    initAudio();
-                }
-            }, { once: true });
         });
 
-        // Initialize
-        updateDisplay();
-
-        // Auto-save every 5 seconds
-        setInterval(() => {
-            localStorage.setItem('stars', stars);
-            localStorage.setItem('totalClicks', totalClicks);
-        }, 5000);
+        // Telegram Web App integration
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
     </script>
 </body>
 </html> 

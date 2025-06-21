@@ -90,6 +90,15 @@ class StarFlowApp {
             });
         });
 
+        // Web3 API routes
+        try {
+            const web3Routes = require('./routes/web3');
+            this.app.use('/api/web3', web3Routes);
+            console.log('✅ Web3 роуты подключены');
+        } catch (error) {
+            console.warn('⚠️ Web3 роуты не удалось подключить:', error.message);
+        }
+
         // Telegram webhook route
         this.app.post('/api/telegram/webhook', (req, res) => {
             console.log('Получен webhook от Telegram:', req.body);
